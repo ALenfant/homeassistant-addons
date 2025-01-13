@@ -12,11 +12,8 @@ docker run \
   -v .:/data \
   -v /var/run/docker.sock:/var/run/docker.sock:ro \
   ghcr.io/home-assistant/aarch64-builder \
-  -t /data \
   --all \
-  --test \
-  -i outline-{arch} \
-  -d local
+  -t /data
 ```
 
 Use `amd64-base` if you're on a x86-64 CPU

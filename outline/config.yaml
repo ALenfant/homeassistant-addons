@@ -1,0 +1,52 @@
+name: "Outline"
+description: "Add-on for the Outline advanced note-taking tool"
+version: "1.1.0"
+image: "ghcr.io/alenfant/ha-outline-{arch}"
+slug: "outline"
+init: false
+arch:
+  - aarch64
+  - amd64
+  - armv7
+environment:
+  PORT: "5785"
+
+  COLLABORATION_URL: ""
+  FILE_STORAGE: local
+  FILE_STORAGE_LOCAL_ROOT_DIR: /data/outline
+  FILE_STORAGE_UPLOAD_MAX_SIZE: "262144000"
+  FILE_STORAGE_IMPORT_MAX_SIZE: ""
+  FILE_STORAGE_WORKSPACE_IMPORT_MAX_SIZE: ""
+options:
+  url: "http://homeassistant.local:5785/"
+
+  # Databases
+  postgres: internal
+  redis: internal
+
+  # Additional config
+  env_vars: []
+schema:
+  url: "str"
+
+  secret_key_override: "str?"
+  utils_secret_override: "str?"
+
+  postgres_url: "str?"
+  redis_url: "str?"
+  postgres: "list(internal|external)?"
+  redis: "list(internal|external)?"
+
+  env_vars: [{
+      name: "str?",
+      value: "str?"
+  }]
+
+map:
+  - type: data
+    read_only: False
+ports:
+  5785/tcp: 5785
+ports_description":
+  "5785/tcp": "Webui"
+webui: "http://[HOST]:[PORT:5785]"

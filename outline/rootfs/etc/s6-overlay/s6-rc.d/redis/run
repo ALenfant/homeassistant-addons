@@ -1,0 +1,14 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+# ==============================================================================
+# Home Assistant Community Add-on: Outline
+# Run Redis
+# ==============================================================================
+
+if [ "$(bashio::config 'redis')" = "internal" ]; then
+    bashio::log.info "Starting internal Redis..."
+    redis-server
+else
+    bashio::config.require 'redis_url' "'redis_url' is necessary to use external Redis"
+    bashio::log.info "Using user-specified Redis, skipping startup"
+fi

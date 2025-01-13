@@ -1,0 +1,127 @@
+#!/command/with-contenv bashio
+# ==============================================================================
+# Home Assistant Add-on: TimescaleDb
+# Initializes the container during startup
+# ==============================================================================
+declare POSTGRES_DATA
+declare VERSION_FILE
+declare NEW_INSTALL
+declare BUILD_TIMESTAMP
+
+POSTGRES_DATA=/data/postgres
+VERSION_FILE=/data/version
+NEW_INSTALL=false;
+BUILD_TIMESTAMP="$(cat /build-timestamp)"
+
+# Applies permission to the data directory for the postgres user
+applyPermissions () {
+	chown -R postgres:postgres ${POSTGRES_DATA}
+	chmod 700 ${POSTGRES_DATA}
+}
+
+# Initializes the data directory
+initializeDataDirectory () {
+	# Init data-directory
+    bashio::log.info "Initializing new postgres directory.."
+	mkdir -p ${POSTGRES_DATA}
+	applyPermissions
+	su - postgres -c "initdb -D ${POSTGRES_DATA}"
+	bashio::log.info "done"
+}
+
+# Upgrades the PostgreSQL databases
+# $1: The current version
+# $2: The new version
+upgradePostgreSQL() {
+	local FROM_VERSION=${1}
+	local TO_VERSION=${2}
+
+	bashio::log.notice "Upgrading databases now. This could take a while. Please be patient..."
+
+	# Move the old data directory out of our way..
+	mv ${POSTGRES_DATA} ${POSTGRES_DATA}${FROM_VERSION}
+
+	# And upgrade PostgreSQL
+	bashio::log.notice "Upgrading PostgreSql from ${FROM_VERSION} to ${TO_VERSION}.."
+
+	# Backup old HBA.conf and create a temp one...
+	mv ${POSTGRES_DATA}${FROM_VERSION}/pg_hba.conf ${POSTGRES_DATA}${FROM_VERSION}/pg_hba_backup.conf
+	echo "local    all             all                                     trust" > ${POSTGRES_DATA}${FROM_VERSION}/pg_hba.conf
+
+	#Start postgres on the old data-dir
+	bashio::log.info "Starting PostgreSQL-${FROM_VERSION} first.."
+	su - postgres -c "/usr/libexec/postgresql${FROM_VERSION}/postgres -D ${POSTGRES_DATA}${FROM_VERSION}" &
+	postgres_pid=$!
+
+	# Wait for postgres to become available..
+	while ! psql -X -U "postgres" postgres -c "" 2> /dev/null; do
+		sleep 1
+	done
+
+	# Stop server
+	bashio::log.notice "Stopping PostgreSql ${FROM_VERSION}.."
+	kill ${postgres_pid}
+	wait ${postgres_pid} || true
+	bashio::log.notice "done"
+
+	# Restore HBA.CONF
+	rm ${POSTGRES_DATA}${FROM_VERSION}/pg_hba.conf
+	mv ${POSTGRES_DATA}${FROM_VERSION}/pg_hba_backup.conf ${POSTGRES_DATA}${FROM_VERSION}/pg_hba.conf
+
+	# Create a fresh data-directory
+	initializeDataDirectory
+
+	# And upgrade!
+	bashio::log.notice "Upgrading databases.."
+	cd ${POSTGRES_DATA}${FROM_VERSION}
+	if su -c "pg_upgrade --old-bindir=/usr/libexec/postgresql${FROM_VERSION} --new-bindir=/usr/libexec/postgresql${TO_VERSION} --old-datadir=${POSTGRES_DATA}${FROM_VERSION} --new-datadir=${POSTGRES_DATA} --link --username=postgres" -s /bin/sh postgres; then
+		bashio::log.notice "PostgreSQL upgraded succesfully!"
+		# Remove the old cluster...
+		rm -r ${POSTGRES_DATA}${FROM_VERSION}
+		return 0
+	else
+		# copy logs
+		cp -r /data/postgres/pg_upgrade_output.d  ${POSTGRES_DATA}${FROM_VERSION} || true
+
+		# Rollback..
+		rm -r ${POSTGRES_DATA}
+		mv ${POSTGRES_DATA}${FROM_VERSION} ${POSTGRES_DATA}
+
+		bashio::log.error "PostgreSQL could not upgrade! Please inspect any errors in the lines above!"
+		return 1
+	fi
+}
+
+if [ "$(bashio::config 'postgres')" = "internal" ]; then
+    bashio::log.info "Setting up Postgres local database"
+	if ! bashio::fs.directory_exists "${POSTGRES_DATA}"; then
+		bashio::log.info "Detected a fresh installation! Welcome! We're setting things up for you.."
+		NEW_INSTALL=true
+	else
+		touch ${VERSION_FILE}
+		# Always re-apply permissions, because they seem to be reset after a snapshot restore
+		applyPermissions
+	fi
+
+	# Initialize for new installs
+	if bashio::var.true "${NEW_INSTALL}"; then
+		touch /data/firstrun
+		echo "${BUILD_TIMESTAMP}" > ${VERSION_FILE}
+		initializeDataDirectory
+	# else
+		# # Check if we need to upgrade from 15 to 16
+		# if [[ $(< ${POSTGRES_DATA}/PG_VERSION) == "15" ]]; then
+		# 	bashio::log.notice "A database upgrade is required from Postgres 15."
+		# 	if upgradePostgreSQL 15 16; then
+		# 		bashio::log.notice "Upgrade was succesful"
+		# 	else
+		# 		bashio::log.error "Upgrade was not succesful."
+		# 		exit 1
+		# 	fi
+		# fi
+	fi
+else
+    bashio::log.info "Using user-specified Postgres DB, skipping setup"
+fi
+
+bashio::log.info "done"

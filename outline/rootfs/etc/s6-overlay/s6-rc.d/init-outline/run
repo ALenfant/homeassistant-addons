@@ -1,0 +1,17 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+# ==============================================================================
+# Home Assistant Community Add-on: Outline
+# Configures Outline before running
+# ==============================================================================
+
+# Generate secrets if necessary
+if ! bashio::config.has_value 'secret_key_override' && ! bashio::fs.file_exists "/data/secret_key"; then
+    bashio::log.info "Generating missing secret key"
+    node /genkeys.js 32 > /data/secret_key
+fi
+
+if ! bashio::config.has_value 'utils_secret_override' && ! bashio::fs.file_exists "/data/utils_secret"; then
+    bashio::log.info "Generating missing utils secret"
+    node /genkeys.js 32 > /data/utils_secret
+fi

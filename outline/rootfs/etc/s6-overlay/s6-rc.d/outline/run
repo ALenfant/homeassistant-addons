@@ -1,0 +1,68 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+# ==============================================================================
+# Home Assistant Community Add-on: Outline
+# Starts Outline
+# ==============================================================================
+
+bashio::log.info "Setting up env variables..."
+
+# These default values can be overridden if necessary
+export NODE_ENV=production
+export DEBUG=http
+export FORCE_HTTPS=false
+
+# From config
+URL=$(bashio::config 'url')
+
+# Potentially generated secrets
+if bashio::config.has_value 'secret_key_override'; then
+    bashio::log.info "Using secret key override"
+    SECRET_KEY=$(bashio::config 'secret_key_override')
+else
+    bashio::log.info "Using secret key from file"
+    SECRET_KEY=$(cat /data/secret_key)
+fi
+
+if bashio::config.has_value 'utils_secret_override'; then
+    bashio::log.info "Using utils secret override"
+    UTILS_SECRET=$(bashio::config 'utils_secret_override')
+else
+    bashio::log.info "Using utils secret from file"
+    UTILS_SECRET=$(cat /data/utils_secret)
+fi
+
+# Database connection URLs
+if [ "$(bashio::config 'postgres')" = "internal" ]; then
+    DATABASE_URL="postgresql://postgres:homeassistant@localhost:5432/outline"
+else
+    DATABASE_URL=$(bashio::config 'postgres_url')
+fi
+
+if [ "$(bashio::config 'redis')" = "internal" ]; then
+    REDIS_URL="redis://localhost:6379"
+else
+    REDIS_URL=$(bashio::config 'redis_url')
+fi
+
+# Export environment variables
+export SECRET_KEY
+export UTILS_SECRET
+export DATABASE_URL
+export REDIS_URL
+export URL
+export PGSSLMODE=disable
+
+# Set all other environment variables
+# These are applied last so we can override those set above if needed.
+for env_var in $(bashio::config 'env_vars|keys'); do
+    name=$(bashio::config "env_vars[${env_var}].name")
+    value=$(bashio::config "env_vars[${env_var}].value")
+    bashio::log.info "Setting Env Variable ${name} to ${value}"
+    export "${name}=${value}"
+done
+
+bashio::log.info "Starting Outline..."
+
+cd /opt/outline || bashio::exit.nok "Could not change directory to Outline"
+yarn start

@@ -1,0 +1,78 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+# ==============================================================================
+# Home Assistant Community Add-on: Outline
+# Start PostgreSQL service
+# ==============================================================================
+declare POSTGRES_DATA
+declare UPDATE
+declare POSTGRES_PID
+declare VERSION_FILE
+declare BUILD_TIMESTAMP
+
+POSTGRES_DATA=/data/postgres
+VERSION_FILE=/data/version
+BUILD_TIMESTAMP="$(cat /build-timestamp)"
+UPDATE=false
+
+if [ "$(bashio::config 'postgres')" = "internal" ]; then
+    bashio::log.info "Starting internal Postgres..."
+
+    # Check if we need to update
+    if [[ $(cat ${VERSION_FILE}) != ${BUILD_TIMESTAMP} ]]; then
+        UPDATE=true
+    fi
+
+    # Start Postgres
+    bashio::log.info "Starting PostgreSQL.."
+    su - postgres -c "postgres -D ${POSTGRES_DATA}" &
+    POSTGRES_PID=$!
+    bashio::log.info "done"
+
+    # Wait for postgres to become available..
+    while ! psql -U "postgres" postgres -c "" 2> /dev/null; do
+        sleep 1
+    done
+
+    # Setup postgres user on first run
+    if [[ -f "/data/firstrun" ]]; then
+        bashio::log.info "Setting up postgres user.."
+        psql -U "postgres" postgres -c "ALTER USER postgres WITH PASSWORD 'homeassistant';"
+    fi
+
+    # Check for extension updates..
+    if bashio::var.true "${UPDATE}"; then
+        bashio::log.notice "Addon was updated to version timestamp: ${BUILD_TIMESTAMP}. Performing database upgrades..."
+    fi
+
+    # Create database if does not exist
+    if [ "$( psql -U postgres -XtAc "SELECT 1 FROM pg_database WHERE datname='outline'" )" = '1' ]
+    then
+        echo "Database already exists"
+    else
+        echo "Database does not exist, creating"
+        psql -U postgres -c "CREATE DATABASE outline;" -c "GRANT ALL PRIVILEGES ON DATABASE outline to postgres;"
+    fi
+
+    bashio::log.info "done"
+
+    # Exit update mode
+    rm -f /data/firstrun
+    if bashio::var.true "${UPDATE}"; then
+        bashio::log.info "Exiting update mode and restarting.."
+        # Write new addon-version
+        echo "${BUILD_TIMESTAMP}" > ${VERSION_FILE}
+        sleep 3
+
+        # Don't fail on the call. When running in standalone, this will fail.
+        bashio::addon.restart || true
+    fi
+
+    # And let it roll
+    bashio::log.notice "Postgres is running!"
+    wait "${POSTGRES_PID}"
+else
+    bashio::config.require 'postgres_url' "'postgres_url' is necessary to use external Postgres DB"
+    bashio::log.info "Using user-specified Postgres DB, skipping startup"
+fi
+
