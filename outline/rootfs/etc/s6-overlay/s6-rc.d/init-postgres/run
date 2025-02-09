@@ -8,7 +8,7 @@ declare VERSION_FILE
 declare NEW_INSTALL
 declare BUILD_TIMESTAMP
 
-POSTGRES_DATA=/data/postgres
+POSTGRES_DATA=/config/database
 VERSION_FILE=/data/version
 NEW_INSTALL=false;
 BUILD_TIMESTAMP="$(cat /build-timestamp)"
@@ -81,7 +81,7 @@ upgradePostgreSQL() {
 		return 0
 	else
 		# copy logs
-		cp -r /data/postgres/pg_upgrade_output.d  ${POSTGRES_DATA}${FROM_VERSION} || true
+		cp -r /config/database/pg_upgrade_output.d  ${POSTGRES_DATA}${FROM_VERSION} || true
 
 		# Rollback..
 		rm -r ${POSTGRES_DATA}
