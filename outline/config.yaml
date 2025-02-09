@@ -47,6 +47,6 @@ map:
     read_only: False
 ports:
   5785/tcp: 5785
-ports_description":
+ports_description:
   "5785/tcp": "Webui"
 webui: "http://[HOST]:[PORT:5785]"
