@@ -15,6 +15,8 @@ ENV \
 # https://github.com/outline/outline/releases
 ARG OUTLINE_VERSION=0.81.1
 
+RUN echo "Builimg for $TARGETPLATFORM"
+
 # Install dependencies, fetch outline source
 RUN \
     apk add --no-cache --virtual .build-deps \
