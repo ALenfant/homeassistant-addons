@@ -15,7 +15,9 @@ ENV \
 # https://github.com/outline/outline/releases
 ARG OUTLINE_VERSION=0.81.1
 
-RUN echo "Builimg for $TARGETPLATFORM"
+ARG BUILD_ARCH
+
+RUN echo "Builimg for $BUILD_ARCH"
 
 # Install dependencies, fetch outline source
 RUN \
@@ -28,7 +30,7 @@ RUN \
         postgresql15=15.10-r0 \
         postgresql15-contrib=15.10-r0 \
         redis=7.2.7-r0 \
-        aws-cli=2.15.14-r0 \
+    && if [ ! "${BUILD_ARCH}" = "armv7" ]; then apk add --no-cache aws-cli=2.15.14-r0; fi \
     \
     && curl -J -L -o /tmp/outline.tar.gz \
         "https://github.com/outline/outline/archive/refs/tags/v${OUTLINE_VERSION}.tar.gz" \
