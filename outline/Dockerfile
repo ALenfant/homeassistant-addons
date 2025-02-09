@@ -25,7 +25,7 @@ RUN \
     && apk add --no-cache \
         postgresql15=15.10-r0 \
         postgresql15-contrib=15.10-r0 \
-        redis=7.2.4-r1 \
+        redis=7.2.7-r0 \
     \
     && curl -J -L -o /tmp/outline.tar.gz \
         "https://github.com/outline/outline/archive/refs/tags/v${OUTLINE_VERSION}.tar.gz" \
