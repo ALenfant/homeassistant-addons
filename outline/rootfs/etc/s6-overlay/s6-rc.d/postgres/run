@@ -10,7 +10,7 @@ declare POSTGRES_PID
 declare VERSION_FILE
 declare BUILD_TIMESTAMP
 
-POSTGRES_DATA=/data/postgres
+POSTGRES_DATA=/config/postgres
 VERSION_FILE=/data/version
 BUILD_TIMESTAMP="$(cat /build-timestamp)"
 UPDATE=false

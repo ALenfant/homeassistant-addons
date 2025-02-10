@@ -6,12 +6,12 @@
 # ==============================================================================
 
 # Generate secrets if necessary
-if ! bashio::config.has_value 'secret_key_override' && ! bashio::fs.file_exists "/data/secret_key"; then
+if ! bashio::config.has_value 'secret_key_override' && ! bashio::fs.file_exists "/config/outline/secret_key"; then
     bashio::log.info "Generating missing secret key"
-    node /genkeys.js 32 > /data/secret_key
+    node /genkeys.js 32 > /config/outline/secret_key
 fi
 
-if ! bashio::config.has_value 'utils_secret_override' && ! bashio::fs.file_exists "/data/utils_secret"; then
+if ! bashio::config.has_value 'utils_secret_override' && ! bashio::fs.file_exists "/config/outline/utils_secret"; then
     bashio::log.info "Generating missing utils secret"
-    node /genkeys.js 32 > /data/utils_secret
+    node /genkeys.js 32 > /config/outline/utils_secret
 fi

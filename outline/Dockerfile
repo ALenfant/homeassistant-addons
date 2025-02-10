@@ -15,6 +15,10 @@ ENV \
 # https://github.com/outline/outline/releases
 ARG OUTLINE_VERSION=0.81.1
 
+ARG BUILD_ARCH
+
+RUN echo "Builimg for $BUILD_ARCH"
+
 # Install dependencies, fetch outline source
 RUN \
     apk add --no-cache --virtual .build-deps \
@@ -26,6 +30,7 @@ RUN \
         postgresql15=15.10-r0 \
         postgresql15-contrib=15.10-r0 \
         redis=7.2.7-r0 \
+    && if [ ! "${BUILD_ARCH}" = "armv7" ]; then apk add --no-cache aws-cli=2.15.14-r0; fi \
     \
     && curl -J -L -o /tmp/outline.tar.gz \
         "https://github.com/outline/outline/archive/refs/tags/v${OUTLINE_VERSION}.tar.gz" \
@@ -49,8 +54,9 @@ RUN mkdir -p /run/postgresql \
 
 # Replace rollup by wasm version to handle unsupported platforms (https://github.com/rollup/rollup/issues/5194 and https://github.com/nuxt/nuxt/issues/24490)
 # Otherwise, error: 8.322 Error: Your current platform "linux" and architecture "arm" combination is not yet supported by the native Rollup build. Please use the WASM build "@rollup/wasm-node" instead.
+# Also force AWS-CRT to be a recent version that includes a prebuild arm64 binary otherwise the build is very long https://github.com/awslabs/aws-crt-nodejs/issues/538
 RUN \
-    jq '.resolutions.rollup = "@rollup/wasm-node\(.resolutions.rollup)"' /opt/outline/package.json > /opt/outline/package.json.tmp \
+    jq '.resolutions += { "rollup": "@rollup/wasm-node\(.resolutions.rollup)", "aws-crt": "^1.25.3" }' /opt/outline/package.json > /opt/outline/package.json.tmp \
     && mv /opt/outline/package.json.tmp /opt/outline/package.json
 
 # Install NodeJS dependencies with Yarn

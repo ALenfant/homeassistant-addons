@@ -21,7 +21,7 @@ if bashio::config.has_value 'secret_key_override'; then
     SECRET_KEY=$(bashio::config 'secret_key_override')
 else
     bashio::log.info "Using secret key from file"
-    SECRET_KEY=$(cat /data/secret_key)
+    SECRET_KEY=$(cat /config/outline/secret_key)
 fi
 
 if bashio::config.has_value 'utils_secret_override'; then
@@ -29,7 +29,7 @@ if bashio::config.has_value 'utils_secret_override'; then
     UTILS_SECRET=$(bashio::config 'utils_secret_override')
 else
     bashio::log.info "Using utils secret from file"
-    UTILS_SECRET=$(cat /data/utils_secret)
+    UTILS_SECRET=$(cat /config/outline/utils_secret)
 fi
 
 # Database connection URLs
