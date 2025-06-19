@@ -1,15 +1,18 @@
-ARG BUILD_FROM=ghcr.io/hassio-addons/base-nodejs:0.2.5
+ARG BUILD_FROM=ghcr.io/alenfant/base-nodejs-image:v1.2.0 
 # https://github.com/hassio-addons/addon-base-nodejs/releases
 # hadolint ignore=DL3006
 FROM ${BUILD_FROM}
 
+# Environment configuration
+ENV NODE_VERSION 20.19.2
+ENV YARN_VERSION 1.22.22
+
+ENV \
+    S6_KILL_GRACETIME 30000 \
+    S6_SERVICES_GRACETIME 30000
+
 # Set shell
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-
-# Environment configuration
-ENV \
-    S6_KILL_GRACETIME=30000 \
-    S6_SERVICES_GRACETIME=30000
 
 # Setup base
 # https://github.com/outline/outline/releases
@@ -17,20 +20,21 @@ ARG OUTLINE_VERSION=0.81.1
 
 ARG BUILD_ARCH
 
-RUN echo "Builimg for $BUILD_ARCH"
+RUN echo "Building for $BUILD_ARCH"
 
 # Install dependencies, fetch outline source
+RUN apk update && apk upgrade
 RUN \
     apk add --no-cache --virtual .build-deps \
         # To build aws-crt dependency on aarch64
-        g++=13.2.1_git20231014-r0 \
+        g++=14.2.0-r4 \
         make=4.4.1-r2 \
-        cmake=3.27.8-r0 \
-    && apk add --no-cache \
-        postgresql15=15.10-r0 \
-        postgresql15-contrib=15.10-r0 \
-        redis=7.2.7-r0 \
-    && if [ ! "${BUILD_ARCH}" = "armv7" ]; then apk add --no-cache aws-cli=2.15.14-r0; fi \
+        cmake=3.31.1-r0
+RUN apk add --no-cache \
+        postgresql15=15.13-r0 \
+        postgresql15-contrib=15.13-r0 \
+        redis=7.2.9-r0 \
+        aws-cli=2.22.10-r0 \
     \
     && curl -J -L -o /tmp/outline.tar.gz \
         "https://github.com/outline/outline/archive/refs/tags/v${OUTLINE_VERSION}.tar.gz" \
@@ -55,9 +59,9 @@ RUN mkdir -p /run/postgresql \
 # Replace rollup by wasm version to handle unsupported platforms (https://github.com/rollup/rollup/issues/5194 and https://github.com/nuxt/nuxt/issues/24490)
 # Otherwise, error: 8.322 Error: Your current platform "linux" and architecture "arm" combination is not yet supported by the native Rollup build. Please use the WASM build "@rollup/wasm-node" instead.
 # Also force AWS-CRT to be a recent version that includes a prebuild arm64 binary otherwise the build is very long https://github.com/awslabs/aws-crt-nodejs/issues/538
-RUN \
-    jq '.resolutions += { "rollup": "@rollup/wasm-node\(.resolutions.rollup)", "aws-crt": "^1.25.3" }' /opt/outline/package.json > /opt/outline/package.json.tmp \
-    && mv /opt/outline/package.json.tmp /opt/outline/package.json
+# RUN \
+#     jq '.resolutions += { "rollup": "@rollup/wasm-node\(.resolutions.rollup)", "aws-crt": "^1.25.3" }' /opt/outline/package.json > /opt/outline/package.json.tmp \
+#     && mv /opt/outline/package.json.tmp /opt/outline/package.json
 
 # Install NodeJS dependencies with Yarn
 RUN \
