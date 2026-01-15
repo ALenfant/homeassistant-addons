@@ -1,7 +1,7 @@
-import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-core";
 import sharp from "sharp"; // Import sharp
 import { BMPEncoder } from "./bmp.js";
-import { debug, isAddOn, chromiumExecutable } from "./const.js";
+import { debug, isAddOn, chromiumExecutable, puppetterUrl } from "./const.js";
 import { CannotOpenPageError } from "./error.js";
 
 const HEADER_HEIGHT = 56;
@@ -267,6 +267,7 @@ export class Browser {
     this.browser = undefined;
     this.page = undefined;
     this.busy = false;
+    this.usesRemoteBrowser = Boolean(puppetterUrl);
 
     // The last path we requested a screenshot for
     // We store this instead of using page.url() because panels can redirect
@@ -301,7 +302,11 @@ export class Browser {
 
     try {
       if (browser) {
-        await browser.close();
+        if (this.usesRemoteBrowser) {
+          await browser.disconnect();
+        } else {
+          await browser.close();
+        }
       }
     } catch (err) {
       console.error("Error closing browser during cleanup:", err);
@@ -312,17 +317,49 @@ export class Browser {
 
   async getPage() {
     if (this.page) {
-      return this.page;
+      if (
+        this.browser &&
+        typeof this.browser.isConnected === "function" &&
+        !this.browser.isConnected()
+      ) {
+        await this.cleanup();
+      } else {
+        return this.page;
+      }
     }
 
-    console.log("Starting browser");
+    if (isAddOn && !puppetterUrl) {
+      throw new Error(
+        "No remote browser configured. Set add-on option `PUPPETTER_URL` (for example: ws://localhost:3000).",
+      );
+    }
+
+    if (puppetterUrl) {
+      let remoteTarget = "<invalid PUPPETTER_URL>";
+      try {
+        const url = new URL(puppetterUrl);
+        remoteTarget = `${url.protocol}//${url.host}`;
+      } catch {
+        // ignore
+      }
+      console.log("Connecting to remote browser", remoteTarget);
+    } else {
+      console.log("Starting local browser");
+    }
+
     // We don't catch these errors on purpose, as we're
     // not able to recover once the app fails to start.
-    const browser = await puppeteer.launch({
-      headless: "shell",
-      executablePath: chromiumExecutable,
-      args: puppeteerArgs,
-    });
+    const browser = puppetterUrl
+      ? await puppeteer.connect(
+          puppetterUrl.startsWith("ws://") || puppetterUrl.startsWith("wss://")
+            ? { browserWSEndpoint: puppetterUrl }
+            : { browserURL: puppetterUrl },
+        )
+      : await puppeteer.launch({
+          headless: "shell",
+          executablePath: chromiumExecutable,
+          args: puppeteerArgs,
+        });
     const page = await browser.newPage();
 
     // Route all log messages from browser to our add-on log

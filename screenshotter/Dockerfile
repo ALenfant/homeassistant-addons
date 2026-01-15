@@ -20,7 +20,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Etc/UTC
 
 RUN apt-get update && apt-get install -y \
-    chromium \
     curl \
     fonts-noto-cjk \
     && curl -fsSL https://deb.nodesource.com/setup_23.x -o nodesource_setup.sh \
@@ -35,9 +34,6 @@ WORKDIR /app
 # Copy package.json and package-lock.json first
 COPY ha-puppet/package*.json ./
 
-# Skip Puppeteer's Chrome download since we use system Chromium
-ENV PUPPETEER_SKIP_DOWNLOAD=true
-
 # Ensure a clean state before installing
 RUN npm ci --unsafe-perm
 
@@ -49,4 +45,3 @@ COPY ha-puppet/ .
 
 # Run the application
 CMD ["node", "http.js"]
-

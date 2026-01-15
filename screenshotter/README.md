@@ -25,6 +25,7 @@ _This is a prototype, there is NO security. Anyone can access the server and mak
 
 - home_assistant_url: Base URL of your Home Assistant instance that the add-on browser should open when taking screenshots. Defaults to `http://homeassistant:8123` which is the internal URL at which the add-on can reach Home Assistant. You can override it if your instance has configured SSL certificates inside Home Assistant and requires to be reached via a different hostname or port (e.g., http://my-ha.local:8123 or https://example.duckdns.org).
 - keep_browser_open: If true, keeps the Chromium browser alive between requests.
+- PUPPETTER_URL: Connect to an existing Chrome/Chromium instance (WebSocket endpoint) instead of launching a browser inside the add-on. You can also set this via the `PUPPETTER_URL` environment variable (takes precedence). Example: `ws://localhost:3000` (commonly provided by the Browserless Chrome add-on). This is required since the add-on no longer installs Chromium.
 
 ## Web UI
 
