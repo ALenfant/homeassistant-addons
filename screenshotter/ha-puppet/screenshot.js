@@ -287,12 +287,18 @@ export class Browser {
       );
     }
 
-    console.log("Connecting to remote browser", puppetterUrl);
+    const connectViaWebSocket =
+      puppetterUrl.startsWith("ws://") || puppetterUrl.startsWith("wss://");
+    console.log(
+      "Connecting to remote browser",
+      puppetterUrl,
+      connectViaWebSocket ? "(browserWSEndpoint)" : "(browserURL)",
+    );
 
     // We don't catch these errors on purpose, as we're
     // not able to recover once the app fails to start.
     const browser = await puppeteer.connect(
-      puppetterUrl.startsWith("ws://") || puppetterUrl.startsWith("wss://")
+      connectViaWebSocket
         ? { browserWSEndpoint: puppetterUrl }
         : { browserURL: puppetterUrl },
     );
