@@ -25,7 +25,6 @@ export const keepBrowserOpen = options.keep_browser_open || false;
 
 export const puppetterUrl =
   process.env.PUPPETTER_URL ||
-  options.PUPPETTER_URL ||
   options.puppetter_url ||
   undefined;
 

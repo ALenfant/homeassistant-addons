@@ -287,14 +287,7 @@ export class Browser {
       );
     }
 
-    let remoteTarget = "<invalid PUPPETTER_URL>";
-    try {
-      const url = new URL(puppetterUrl);
-      remoteTarget = `${url.protocol}//${url.host}`;
-    } catch {
-      // ignore
-    }
-    console.log("Connecting to remote browser", remoteTarget);
+    console.log("Connecting to remote browser", puppetterUrl);
 
     // We don't catch these errors on purpose, as we're
     // not able to recover once the app fails to start.
