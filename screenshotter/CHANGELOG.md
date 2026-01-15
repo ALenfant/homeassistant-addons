@@ -2,7 +2,7 @@
 
 ## 2.5.0
 
-- Add `PUPPETTER_URL` / `puppetter_url` to connect to a remote Chrome (e.g. Browserless)
+- Add `puppetter_url` (or env `PUPPETTER_URL`) to connect to a remote Chrome (e.g. Browserless)
 - Stop installing Chromium in the add-on container
 
 ## 2.4.3

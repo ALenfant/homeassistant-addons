@@ -14,9 +14,9 @@ options:
   access_token: ""
   keep_browser_open: false
   home_assistant_url: "http://homeassistant:8123"
-  PUPPETTER_URL: ""
+  puppetter_url: ""
 schema:
   access_token: str
   keep_browser_open: bool
   home_assistant_url: str
-  PUPPETTER_URL: str?
+  puppetter_url: str?

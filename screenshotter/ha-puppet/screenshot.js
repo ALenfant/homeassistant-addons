@@ -1,7 +1,7 @@
 import puppeteer from "puppeteer-core";
 import sharp from "sharp"; // Import sharp
 import { BMPEncoder } from "./bmp.js";
-import { debug, isAddOn, chromiumExecutable, puppetterUrl } from "./const.js";
+import { debug, isAddOn, puppetterUrl } from "./const.js";
 import { CannotOpenPageError } from "./error.js";
 
 const HEADER_HEIGHT = 56;
@@ -218,48 +218,6 @@ const hassLocalStorageDefaults = {
   selectedTheme: `{"dark": false}`,
 };
 
-// From https://www.bannerbear.com/blog/ways-to-speed-up-puppeteer-screenshots/
-const puppeteerArgs = [
-  "--autoplay-policy=user-gesture-required",
-  "--disable-background-networking",
-  "--disable-background-timer-throttling",
-  "--disable-backgrounding-occluded-windows",
-  "--disable-breakpad",
-  "--disable-client-side-phishing-detection",
-  "--disable-component-update",
-  "--disable-default-apps",
-  "--disable-dev-shm-usage",
-  "--disable-domain-reliability",
-  "--disable-extensions",
-  "--disable-features=AudioServiceOutOfProcess",
-  "--disable-hang-monitor",
-  "--disable-ipc-flooding-protection",
-  "--disable-notifications",
-  "--disable-offer-store-unmasked-wallet-cards",
-  "--disable-popup-blocking",
-  "--disable-print-preview",
-  "--disable-prompt-on-repost",
-  "--disable-renderer-backgrounding",
-  "--disable-setuid-sandbox",
-  "--disable-speech-api",
-  "--disable-sync",
-  "--hide-scrollbars",
-  "--ignore-gpu-blacklist",
-  "--metrics-recording-only",
-  "--mute-audio",
-  "--no-default-browser-check",
-  "--no-first-run",
-  "--no-pings",
-  "--no-sandbox",
-  "--no-zygote",
-  "--password-store=basic",
-  "--use-gl=swiftshader",
-  "--use-mock-keychain",
-];
-if (isAddOn) {
-  puppeteerArgs.push("--enable-low-end-device-mode");
-}
-
 export class Browser {
   constructor(homeAssistantUrl, token) {
     this.homeAssistantUrl = homeAssistantUrl;
@@ -267,7 +225,6 @@ export class Browser {
     this.browser = undefined;
     this.page = undefined;
     this.busy = false;
-    this.usesRemoteBrowser = Boolean(puppetterUrl);
 
     // The last path we requested a screenshot for
     // We store this instead of using page.url() because panels can redirect
@@ -302,11 +259,7 @@ export class Browser {
 
     try {
       if (browser) {
-        if (this.usesRemoteBrowser) {
-          await browser.disconnect();
-        } else {
-          await browser.close();
-        }
+        await browser.disconnect();
       }
     } catch (err) {
       console.error("Error closing browser during cleanup:", err);
@@ -328,38 +281,28 @@ export class Browser {
       }
     }
 
-    if (isAddOn && !puppetterUrl) {
+    if (!puppetterUrl) {
       throw new Error(
-        "No remote browser configured. Set add-on option `PUPPETTER_URL` (for example: ws://localhost:3000).",
+        "No remote browser configured. Set add-on option `puppetter_url` or env `PUPPETTER_URL` (for example: ws://localhost:3000).",
       );
     }
 
-    if (puppetterUrl) {
-      let remoteTarget = "<invalid PUPPETTER_URL>";
-      try {
-        const url = new URL(puppetterUrl);
-        remoteTarget = `${url.protocol}//${url.host}`;
-      } catch {
-        // ignore
-      }
-      console.log("Connecting to remote browser", remoteTarget);
-    } else {
-      console.log("Starting local browser");
+    let remoteTarget = "<invalid PUPPETTER_URL>";
+    try {
+      const url = new URL(puppetterUrl);
+      remoteTarget = `${url.protocol}//${url.host}`;
+    } catch {
+      // ignore
     }
+    console.log("Connecting to remote browser", remoteTarget);
 
     // We don't catch these errors on purpose, as we're
     // not able to recover once the app fails to start.
-    const browser = puppetterUrl
-      ? await puppeteer.connect(
-          puppetterUrl.startsWith("ws://") || puppetterUrl.startsWith("wss://")
-            ? { browserWSEndpoint: puppetterUrl }
-            : { browserURL: puppetterUrl },
-        )
-      : await puppeteer.launch({
-          headless: "shell",
-          executablePath: chromiumExecutable,
-          args: puppeteerArgs,
-        });
+    const browser = await puppeteer.connect(
+      puppetterUrl.startsWith("ws://") || puppetterUrl.startsWith("wss://")
+        ? { browserWSEndpoint: puppetterUrl }
+        : { browserURL: puppetterUrl },
+    );
     const page = await browser.newPage();
 
     // Route all log messages from browser to our add-on log
