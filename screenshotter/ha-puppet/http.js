@@ -1,13 +1,21 @@
 import http from "node:http";
 import { Browser } from "./screenshot.js";
-import { isAddOn, hassUrl, hassToken, keepBrowserOpen } from "./const.js";
+import { isAddOn, hassUrl, keepBrowserOpen } from "./const.js";
 import { CannotOpenPageError } from "./error.js";
-import { handleUIRequest } from "./ui.js";
+import { handleHassDataRequest, handleUIRequest } from "./ui.js";
 import { loadDevicesConfig, getDeviceConfig } from "./devices.js";
 
 // Maximum number of next requests to keep in memory
 const MAX_NEXT_REQUESTS = 100;
 const BROWSER_TIMEOUT = 30_000; // Timeout for browser inactivity in milliseconds
+
+function redactedRequestPath(requestUrl) {
+  const url = new URL(requestUrl.toString());
+  if (url.searchParams.has("access_token")) {
+    url.searchParams.set("access_token", "REDACTED");
+  }
+  return `${url.pathname}${url.search}`;
+}
 
 class RequestHandler {
   constructor(browser) {
@@ -71,13 +79,18 @@ class RequestHandler {
       return;
     }
 
+    if (requestUrl.pathname === "/api/hass-data") {
+      await handleHassDataRequest(request, response);
+      return;
+    }
+
     if (requestUrl.pathname === "/") {
       await handleUIRequest(response);
       return;
     }
 
     const requestId = ++this.requestCount;
-    console.debug(requestId, "Request", request.url);
+    console.debug(requestId, "Request", redactedRequestPath(requestUrl));
 
     const start = new Date();
     if (this.busy) {
@@ -89,7 +102,7 @@ class RequestHandler {
     this.busy = true;
 
     try {
-      console.debug(requestId, "Handling", request.url);
+      console.debug(requestId, "Handling", redactedRequestPath(requestUrl));
 
       // Load device configurations
       const devicesData = loadDevicesConfig();
@@ -210,6 +223,13 @@ class RequestHandler {
       const theme = requestUrl.searchParams.get("theme") || undefined;
       const dark = requestUrl.searchParams.has("dark");
 
+      const accessToken = requestUrl.searchParams.get("access_token")?.trim();
+      if (!accessToken) {
+        response.statusCode = 400;
+        response.end("Missing access_token");
+        return;
+      }
+
       // Dithering algorithm
       // Use device config as default if available
       const ditheringQuery = requestUrl.searchParams.get("dithering");
@@ -243,6 +263,7 @@ class RequestHandler {
         lang,
         theme,
         dark,
+        accessToken,
       };
 
       // Extract next param and schedule if necessary
@@ -359,7 +380,7 @@ class RequestHandler {
   }
 }
 
-const browser = new Browser(hassUrl, hassToken);
+const browser = new Browser(hassUrl);
 const requestHandler = new RequestHandler(browser);
 const port = 10000;
 const server = http.createServer((request, response) =>

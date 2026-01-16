@@ -219,9 +219,8 @@ const hassLocalStorageDefaults = {
 };
 
 export class Browser {
-  constructor(homeAssistantUrl, token) {
+  constructor(homeAssistantUrl) {
     this.homeAssistantUrl = homeAssistantUrl;
-    this.token = token;
     this.browser = undefined;
     this.page = undefined;
     this.busy = false;
@@ -233,6 +232,7 @@ export class Browser {
     this.lastRequestedLang = undefined;
     this.lastRequestedTheme = undefined;
     this.lastRequestedDarkMode = undefined;
+    this.lastRequestedAccessToken = undefined;
   }
 
   async cleanup() {
@@ -248,6 +248,7 @@ export class Browser {
     this.lastRequestedLang = undefined;
     this.lastRequestedTheme = undefined;
     this.lastRequestedDarkMode = undefined;
+    this.lastRequestedAccessToken = undefined;
 
     try {
       if (page) {
@@ -346,6 +347,7 @@ export class Browser {
     lang,
     theme,
     dark,
+    accessToken,
   }) {
     let start = new Date();
     if (this.busy) {
@@ -356,6 +358,18 @@ export class Browser {
     const headerHeight = Math.round(HEADER_HEIGHT * zoom);
 
     try {
+      if (!accessToken) {
+        throw new Error("Missing access_token");
+      }
+
+      if (
+        this.lastRequestedAccessToken !== undefined &&
+        this.lastRequestedAccessToken !== accessToken
+      ) {
+        await this.cleanup();
+      }
+      this.lastRequestedAccessToken = accessToken;
+
       const page = await this.getPage();
 
       // We add 56px to the height to account for the header
@@ -385,7 +399,7 @@ export class Browser {
         const browserLocalStorage = {
           ...hassLocalStorageDefaults,
           hassTokens: JSON.stringify({
-            access_token: this.token,
+            access_token: accessToken,
             token_type: "Bearer",
             expires_in: 1800,
             hassUrl,

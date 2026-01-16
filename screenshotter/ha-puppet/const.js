@@ -28,5 +28,7 @@ export const puppetterUrl =
   undefined;
 
 if (!hassToken) {
-  console.warn("No access token configured. UI will show configuration instructions.");
+  console.warn(
+    "No access token configured in add-on options. The UI will ask for one and API calls must provide `access_token`.",
+  );
 }

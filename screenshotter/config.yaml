@@ -16,7 +16,7 @@ options:
   home_assistant_url: "http://homeassistant:8123"
   puppetter_url: ""
 schema:
-  access_token: str
+  access_token: str?
   keep_browser_open: bool
   home_assistant_url: str
   puppetter_url: str?
