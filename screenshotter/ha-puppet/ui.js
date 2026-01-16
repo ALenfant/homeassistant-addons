@@ -72,7 +72,7 @@ export async function handleUIRequest(response) {
                 <strong>Configure the Add-on:</strong>
                 <ul class="ml-6 mt-2 space-y-1 list-disc list-inside text-sm">
                   <li>Go to Settings → Add-ons</li>
-                  <li>Click on the Puppet add-on</li>
+                  <li>Click on the Screenshotter add-on</li>
                   <li>Go to the Configuration tab</li>
                   <li>Paste your token in the "access_token" field</li>
                   <li>Save and restart the add-on</li>
@@ -117,7 +117,7 @@ export async function handleUIRequest(response) {
                 <strong>Update the Add-on Configuration:</strong>
                 <ul class="ml-6 mt-2 space-y-1 list-disc list-inside text-sm">
                   <li>Go to Settings → Add-ons</li>
-                  <li>Click on the Puppet add-on</li>
+                  <li>Click on the Screenshotter add-on</li>
                   <li>Go to the Configuration tab</li>
                   <li>Update the "access_token" field with the new token</li>
                   <li>Save and restart the add-on</li>

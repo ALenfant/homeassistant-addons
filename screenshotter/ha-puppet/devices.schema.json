@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "title": "Puppet Devices Configuration",
+  "title": "Screenshotter Devices Configuration",
   "description": "Configuration file for predefined device settings",
   "type": "object",
   "required": ["devices"],

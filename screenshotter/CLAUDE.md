@@ -1,8 +1,8 @@
-# Puppet Add-On - Developer Documentation
+# Screenshotter Add-On - Developer Documentation
 
 ## Overview
 
-Puppet is a Home Assistant add-on that provides screenshot capabilities for Home Assistant dashboards using Puppeteer (headless Chrome). It features a web-based UI for configuring and previewing screenshots, with support for URL-based configuration sharing and preset management.
+Screenshotter is a Home Assistant add-on that provides screenshot capabilities for Home Assistant dashboards using Puppeteer (headless Chrome). It features a web-based UI for configuring and previewing screenshots, with support for URL-based configuration sharing and preset management.
 
 ## Architecture
 
