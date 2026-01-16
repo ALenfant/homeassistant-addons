@@ -1,4 +1,6 @@
 # Screenshotter
+![Screenshotter logo](logo.png)
+
 Based on balloob's amazing [Home Assistant using Puppeteer](https://github.com/balloob/home-assistant-addons/tree/main/puppet)
 
 Easily create screenshots of your Home Assistant dashboards. Allowing you to put them on e-ink screens or any other screen that can display images.

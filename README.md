@@ -9,3 +9,4 @@ Add [this](https://github.com/ALenfant/homeassistant-addons) repository to your 
 ## Add-ons
 
 - [Outline](https://github.com/ALenfant/homeassistant-addons/tree/main/outline)
+- [Screenshotter](https://github.com/ALenfant/homeassistant-addons/tree/main/screenshotter)
