@@ -1,6 +1,6 @@
 name: "Screenshotter"
 description: "Turn dashboards into nice pictures"
-version: "2.5.0"
+version: "2.5.1"
 slug: "screenshotter"
 homeassistant_api: true
 init: false

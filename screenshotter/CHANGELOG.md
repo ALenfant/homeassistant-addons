@@ -1,5 +1,9 @@
 # Changelog
 
+## 2.5.1
+
+- Make access_token config optional, enforce providing it in URLs to make addon a bit safer to use
+
 ## 2.5.0
 
 - Add `puppetter_url` to connect to a remote Chrome (e.g. Browserless)
